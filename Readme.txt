@@ -2,6 +2,7 @@ Overall:
 The main model is run with 
 SWEDEN_FIRST_IO_Model.m
 but requires and input data to be updated first.
+Documentation of procedure at https://zenodo.org/record/1489943
 
 
 Step 1:
