@@ -113,13 +113,13 @@ for yr=year_of_analysis
         fl='pxp'
         %NB - you must have downloaded a local copy of the files from https://ntnu.box.com/s/75v6quxvuxlpw7fu4roa7lnrfc09jotr
 %         load(['prince_data_',dataset_name,'_',fl,'_',yrstr],'IO','meta','macro','stressors','stressors_hh')
-            load(['..\..\..\..\\Prince_Data\prince_data_',dataset_name,'_',fl,'_',yrstr],'IO','meta','macro','stressors','stressors_hh')
-            addpath('..\..\..\..\\Prince_Data\')
+            load(['..\..\..\..\..\Prince_Data\prince_data_',dataset_name,'_',fl,'_',yrstr],'IO','meta','macro','stressors','stressors_hh')
+            addpath('..\..\..\..\..\Prince_Data\')
     end
     
     %Final prep of data:
     
-    tr=mriotree(meta);
+%     tr=mriotree(meta);
     sweden_index=25;%tr.a3('SWE');
     
     %get the final demand data for later weighting:
@@ -164,17 +164,24 @@ for yr=year_of_analysis
         %Multipliers
         QEXIO.mult(:,i)=tmp_S*IO.L;
         %Multipliers by origin
-        QEXIO.mult_src(:,:,i)=tr.collapseZdim(bsxfun(@times,IO.L, QEXIO.S(:,i)),1); %same as:diag(QEXIO.S(:,i))*IO.L;
+        country_agg=kron(eye(49),ones(200,1));
+%         QEXIO.mult_src(:,:,i)=tr.collapseZdim(bsxfun(@times,IO.L, QEXIO.S(:,i)),1); %same as:diag(QEXIO.S(:,i))*IO.L; % using mriotree
+        QEXIO.mult_src(:,:,i)=country_agg'*(bsxfun(@times,IO.L, QEXIO.S(:,i))); %same as:diag(QEXIO.S(:,i))*IO.L; % using kronecker
         %HHld impact
-        tmp_Fh_cnt=tr.collapseYdim(tmp_Fh);
+        country_agg_y=kron(eye(49),ones(7,1));
+%         tmp_Fh_cnt=tr.collapseYdim(tmp_Fh);
+        tmp_Fh_cnt=(country_agg_y'*(tmp_Fh'))';
         QEXIO.F_hh(:,i)=tmp_Fh_cnt(sweden_index);
         %Sweden Production account:
         tmp_F=tmp_S.*IO.x';
-        tmp_F_cnt=tr.collapseZdim(tmp_F,2);
+%         tmp_F_cnt=tr.collapseZdim(tmp_F,2);
+        tmp_F_cnt=(country_agg'*(tmp_F'))';
         QEXIO.prod(:,i)=tmp_F_cnt(sweden_index)+QEXIO.F_hh(:,i);
-        QEXIO.F(:,i)=tmp_F(tr.indexZ{sweden_index});
+%         QEXIO.F(:,i)=tmp_F(tr.indexZ{sweden_index});
+        QEXIO.F(:,i)=tmp_F(strcmp(meta.secLabsZ.Country,'SE'));
         %Sweden Consumption account:
-        tmp_Q_cnt=tr.collapseYdim(QEXIO.mult(:,i)'*IO.Y);
+%         tmp_Q_cnt=tr.collapseYdim(QEXIO.mult(:,i)'*IO.Y);
+        tmp_Q_cnt=(country_agg_y'*(QEXIO.mult(:,i)'*IO.Y)')';
         QEXIO.cons(:,i)=tmp_Q_cnt(sweden_index);
         
         clear tmp_F tmp_F_cnt tmp_Q_cnt tmp_Fh_cnt tmp_S tmp_Fh
